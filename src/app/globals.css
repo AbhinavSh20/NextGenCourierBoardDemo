@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+
+  --color-primary: #7c3aed;
+  --color-primary-dark: #5b21b6;
+  --color-accent: #db2777;
+  --color-ink: #0a0a0a;
+  --color-ink-soft: #52525b;
+  --color-muted: #a1a1aa;
+  --color-border: #e4e4e7;
+  --color-surface: #ffffff;
+  --color-chrome: #0a0a0a;
+  --color-success-bg: #dcfce7;
+  --color-success-ink: #166534;
+  --color-warning-bg: #fef3c7;
+  --color-warning-ink: #92400e;
+  --color-error-bg: #fee2e2;
+  --color-error-ink: #991b1b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-accent: var(--color-accent);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-surface: var(--color-surface);
+  --color-chrome: var(--color-chrome);
+  --color-success-bg: var(--color-success-bg);
+  --color-success-ink: var(--color-success-ink);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-warning-ink: var(--color-warning-ink);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-ink: var(--color-error-ink);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  overscroll-behavior: none;
+}
+
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS zooms the page on focus into any input under 16px; Tailwind's text-sm (14px)
+   utility on form fields would otherwise win the cascade over a plain element rule. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Feedback on press, not on release — Apple's "response" principle. */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  transition: transform 100ms ease-out;
+}
+button:not(:disabled):active,
+[role="button"]:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.toast-in {
+  animation: toast-in 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+.skeleton {
+  border-radius: 6px;
+  background: var(--color-border);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
