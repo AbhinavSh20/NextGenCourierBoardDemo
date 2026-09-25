@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --color-primary: #7c3aed;
   --color-primary-dark: #5b21b6;
@@ -93,6 +94,16 @@ button:not(:disabled):active,
 }
 .toast-in {
   animation: toast-in 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.fade-in-up {
+  animation: fade-in-up 250ms var(--ease-out) both;
 }
 
 @keyframes skeleton-pulse {

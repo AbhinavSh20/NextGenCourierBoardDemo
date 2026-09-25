@@ -32,7 +32,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedDaysAgo: 0.08,
     isNew: true,
     description:
-      "Deliver same-day parcels across the Denver metro on a set daily route. Most shifts run 8am–4pm with 20–35 stops.",
+      "You'll run the same route most days once you learn it — mostly Denver metro, 20-35 stops depending on volume. Shift's usually done by early afternoon. We use a routing app so you're not guessing at addresses all day.",
     requirements: [
       "Valid driver's license, clean MVR",
       "Own or lease a cargo van (2015+)",
@@ -52,7 +52,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedAt: "1d ago",
     postedDaysAgo: 1,
     description:
-      "Regional box truck runs, Denver–Colorado Springs corridor. Consistent weekly volume, fuel surcharge included.",
+      "Steady lane between Denver and Colorado Springs, same client every week so the volume doesn't swing much. Fuel surcharge is on top of the rate, not baked in. Mostly daytime runs, occasional early start.",
     requirements: [
       "Own 26' box truck with liftgate",
       "2+ years commercial driving experience",
@@ -72,7 +72,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedAt: "5d ago",
     postedDaysAgo: 5,
     description:
-      "Downtown Boulder food and package courier. Flexible shifts, ideal for students. Bring your own bike.",
+      "Pretty much all downtown Boulder, so no long hauls. Good gig if you've got class in the afternoon or just don't want a 9-to-5 — pick shifts that work for you. Tips are solid on food runs.",
     requirements: [
       "Own reliable bike + helmet",
       "Comfortable riding in traffic",
@@ -93,7 +93,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedDaysAgo: 0.12,
     isNew: true,
     description:
-      "Full-time W2 position with benefits. Fixed residential route, company van provided.",
+      "This is a real W2 job, not 1099 — health benefits kick in after 60 days. Same residential route every day so you'll know it cold within a couple weeks. We provide the van, you just show up and drive.",
     requirements: [
       "Valid driver's license",
       "Pass background check",
@@ -113,7 +113,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedAt: "2d ago",
     postedDaysAgo: 2,
     description:
-      "Saturday/Sunday delivery shifts, 6am–2pm. Great for drivers wanting weekend-only work.",
+      "Just Saturdays and Sundays, 6 to 2. We get a lot of interest from drivers who already have a weekday job and want extra cash on the weekend — that's basically who this is built for.",
     requirements: [
       "Valid driver's license, clean MVR",
       "Available both weekend days",
@@ -132,7 +132,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedAt: "6d ago",
     postedDaysAgo: 6,
     description:
-      "Document and small-parcel courier runs across the metro. Paid per mile, set your own hours.",
+      "Mostly legal documents and small parcels, nothing heavy. You're paid per mile so a slow week just means fewer runs, not a wasted shift. Log in to the dispatch app whenever you want to work — no set schedule.",
     requirements: [
       "Own sedan or hatchback, 2012+",
       "Valid insurance",
@@ -151,7 +151,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedAt: "4d ago",
     postedDaysAgo: 4,
     description:
-      "Last-mile Sprinter van routes for a regional e-commerce client. Consistent daily volume, no weekends.",
+      "Last-mile drops for one of our bigger e-commerce accounts, so the volume's pretty predictable day to day. No weekend work on this one. Note: this posting's currently closed, but check back — it reopens when the account renews.",
     requirements: [
       "Own Sprinter or similar high-roof van",
       "Active commercial auto insurance",
@@ -171,7 +171,7 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
     postedDaysAgo: 0.33,
     isNew: true,
     description:
-      "Time-sensitive lab specimen and medical supply runs between clinics. On-call shifts, premium pay.",
+      "You're moving lab specimens and supplies between clinics, sometimes on short notice — that's why the pay's higher than our other routes. It's on-call, not a fixed schedule, so this works best if you can drop what you're doing when a run comes in.",
     requirements: [
       "Valid driver's license, clean MVR",
       "Background check required (medical sites)",
