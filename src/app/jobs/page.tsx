@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import JobCard from "@/components/JobCard";
 import EmptyState from "@/components/EmptyState";
 import Pagination from "@/components/Pagination";
@@ -9,18 +9,28 @@ import FilterPanel, {
   FilterState,
   activeFilterCount,
 } from "@/components/FilterPanel";
-import { MOCK_JOBS } from "@/data/jobs";
+import { MOCK_JOBS, type Job } from "@/data/jobs";
 
 const PAGE_SIZE = 4;
+const POLL_INTERVAL_MS = 5000;
 
 export default function JobListingsPage() {
+  const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [sort, setSort] = useState<"newest" | "pay">("newest");
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    // ND-1540: board must show a new ad without a manual reload. There's no real API yet,
+    // so this just re-reads the mock source on an interval — swap this for a `GET /ads?location=`
+    // fetch once the trigger backend exists; the filter/sort/pagination below don't need to change.
+    const interval = setInterval(() => setJobs([...MOCK_JOBS]), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
+
   const filtered = useMemo(() => {
-    const result = MOCK_JOBS.filter((job) => {
+    const result = jobs.filter((job) => {
       if (filters.jobTypes.length && !filters.jobTypes.includes(job.type)) return false;
       if (filters.vehicles.length && !filters.vehicles.includes(job.vehicle)) return false;
       if (filters.maxDaysAgo !== null && job.postedDaysAgo > filters.maxDaysAgo) return false;
@@ -31,7 +41,7 @@ export default function JobListingsPage() {
     return result.sort((a, b) =>
       sort === "newest" ? a.postedDaysAgo - b.postedDaysAgo : b.payValue - a.payValue,
     );
-  }, [filters, sort]);
+  }, [jobs, filters, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);

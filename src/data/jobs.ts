@@ -12,8 +12,13 @@ export type Job = {
   isNew?: boolean;
   description: string;
   requirements: string[];
-  status: "live" | "closed";
+  status: "live" | "closed" | "expired";
   applicantCount: number;
+  // ND-1540: ad-board fields, populated only for postings that come through the email-trigger flow
+  expiresAt?: string;
+  renewedAt?: string;
+  voiceRoute?: string;
+  textRoute?: string;
 };
 
 const APPLICANT_COUNTS = [12, 8, 3, 20, 5, 7, 15, 9];
@@ -79,6 +84,9 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
       "Smartphone with data plan",
       "18+ years old",
     ],
+    expiresAt: "expired 2d ago",
+    voiceRoute: "tel:+17205550142",
+    textRoute: "sms:+17205550142",
   },
   {
     id: "4",
@@ -119,6 +127,10 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
       "Available both weekend days",
       "Able to lift up to 40 lbs",
     ],
+    expiresAt: "expires in 5d",
+    renewedAt: "Renewed 3h ago",
+    voiceRoute: "tel:+13035550121",
+    textRoute: "sms:+13035550121",
   },
   {
     id: "6",
@@ -178,11 +190,19 @@ const JOB_BASE: Omit<Job, "status" | "applicantCount">[] = [
       "Reliable vehicle with insurance",
       "Available for on-call shifts",
     ],
+    expiresAt: "expires in 12d",
+    voiceRoute: "tel:+13035550188",
+    textRoute: "sms:+13035550188",
   },
 ];
 
+const STATUS_OVERRIDES: Record<string, Job["status"]> = {
+  "3": "expired",
+  "7": "closed",
+};
+
 export const MOCK_JOBS: Job[] = JOB_BASE.map((job, i) => ({
   ...job,
-  status: job.id === "7" ? "closed" : "live",
+  status: STATUS_OVERRIDES[job.id] ?? "live",
   applicantCount: APPLICANT_COUNTS[i],
 }));

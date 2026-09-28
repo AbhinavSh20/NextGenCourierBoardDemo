@@ -1,6 +1,7 @@
 const STATUS_STYLES: Record<string, string> = {
   live: "bg-[var(--color-success-bg)] text-[var(--color-success-ink)]",
   closed: "bg-slate-100 text-[var(--color-ink-soft)]",
+  expired: "bg-[var(--color-warning-bg)] text-[var(--color-warning-ink)]",
   new: "bg-violet-50 text-[var(--color-primary-dark)]",
   contacted: "bg-[var(--color-warning-bg)] text-[var(--color-warning-ink)]",
   rejected: "bg-[var(--color-error-bg)] text-[var(--color-error-ink)]",

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import type { Job } from "@/data/jobs";
 import Tag from "@/components/Tag";
-import { LocationPinIcon, ClockIcon, vehicleIcon } from "@/components/icons";
+import StatusPill from "@/components/StatusPill";
+import { LocationPinIcon, ClockIcon, PhoneIcon, MessageIcon, vehicleIcon } from "@/components/icons";
 import { useSavedJobIds } from "@/lib/useSavedJobIds";
 import { toggleSaved } from "@/lib/savedJobsStore";
 
@@ -69,14 +70,42 @@ export default function JobCard({ job }: { job: Job }) {
             <ClockIcon />
             {job.postedAt}
           </span>
+          {job.renewedAt && <span className="text-[var(--color-primary-dark)]">{job.renewedAt}</span>}
+          {job.expiresAt && <span>{job.expiresAt}</span>}
         </div>
       </div>
 
-      <div className="pointer-events-none relative col-start-2 col-span-2 mt-2.5 flex flex-wrap gap-1.5">
+      <div className="pointer-events-none relative col-start-2 col-span-2 mt-2.5 flex flex-wrap items-center gap-1.5">
         <Tag>{job.type}</Tag>
         <Tag variant="neutral">{job.vehicle}</Tag>
         {job.isNew && <Tag variant="success">New</Tag>}
+        {job.status !== "live" && <StatusPill status={job.status} />}
       </div>
+
+      {(job.voiceRoute || job.textRoute) && (
+        <div className="relative z-10 col-start-2 col-span-2 mt-2.5 flex gap-2">
+          {job.voiceRoute && (
+            <a
+              href={job.voiceRoute}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors duration-150 ease-out hover:border-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
+            >
+              <PhoneIcon className="h-3.5 w-3.5" />
+              Call
+            </a>
+          )}
+          {job.textRoute && (
+            <a
+              href={job.textRoute}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors duration-150 ease-out hover:border-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
+            >
+              <MessageIcon className="h-3.5 w-3.5" />
+              Text
+            </a>
+          )}
+        </div>
+      )}
     </article>
   );
 }

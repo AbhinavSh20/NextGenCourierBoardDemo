@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import JobCard from "@/components/JobCard";
 import Tag from "@/components/Tag";
-import { LocationPinIcon, ClockIcon, vehicleIcon } from "@/components/icons";
+import StatusPill from "@/components/StatusPill";
+import { LocationPinIcon, ClockIcon, PhoneIcon, MessageIcon, vehicleIcon } from "@/components/icons";
 import { MOCK_JOBS } from "@/data/jobs";
 
 export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">) {
@@ -59,15 +60,45 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
           </span>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap items-center gap-1.5">
           <Tag>{job.type}</Tag>
           <Tag variant="neutral">{job.vehicle}</Tag>
           {job.isNew && <Tag variant="success">New</Tag>}
+          {job.status !== "live" && <StatusPill status={job.status} />}
         </div>
+
+        {(job.renewedAt || job.expiresAt) && (
+          <p className="mt-2 text-xs text-[var(--color-ink-soft)]">
+            {[job.renewedAt, job.expiresAt].filter(Boolean).join(" · ")}
+          </p>
+        )}
+
+        {(job.voiceRoute || job.textRoute) && (
+          <div className="mt-4 hidden gap-2 sm:flex">
+            {job.voiceRoute && (
+              <a
+                href={job.voiceRoute}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors duration-150 ease-out hover:border-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
+              >
+                <PhoneIcon className="h-4 w-4" />
+                Call
+              </a>
+            )}
+            {job.textRoute && (
+              <a
+                href={job.textRoute}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors duration-150 ease-out hover:border-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
+              >
+                <MessageIcon className="h-4 w-4" />
+                Text
+              </a>
+            )}
+          </div>
+        )}
 
         <Link
           href={`/jobs/${job.id}/apply`}
-          className="mt-6 hidden w-full rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--color-primary-dark)] active:scale-[0.97] sm:block"
+          className="mt-4 hidden w-full rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--color-primary-dark)] active:scale-[0.97] sm:block"
         >
           Apply now
         </Link>
@@ -107,10 +138,28 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
         </section>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/40 bg-[var(--color-surface)]/90 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-white/40 bg-[var(--color-surface)]/90 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:hidden">
+        {job.voiceRoute && (
+          <a
+            href={job.voiceRoute}
+            aria-label="Call about this job"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-ink)]"
+          >
+            <PhoneIcon className="h-4 w-4" />
+          </a>
+        )}
+        {job.textRoute && (
+          <a
+            href={job.textRoute}
+            aria-label="Text about this job"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-ink)]"
+          >
+            <MessageIcon className="h-4 w-4" />
+          </a>
+        )}
         <Link
           href={`/jobs/${job.id}/apply`}
-          className="block w-full rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--color-primary-dark)] active:scale-[0.97]"
+          className="block flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--color-primary-dark)] active:scale-[0.97]"
         >
           Apply now
         </Link>
