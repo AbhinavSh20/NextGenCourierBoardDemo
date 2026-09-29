@@ -48,15 +48,46 @@ export default function PostJobPage() {
     applicantCount: 0,
   };
 
-  function handlePublish(e: React.FormEvent) {
+  async function handlePublish(e: React.FormEvent) {
     e.preventDefault();
+    if (title.trim() === "") return;
+
     setPublishing(true);
     signIn("employer", company || "Employer");
-    // ponytail: no real backend — simulate the publish round-trip so the loading state is honest
-    setTimeout(() => {
-      toast(`${title || "Job"} published`);
+
+    try {
+      const payload = {
+        title,
+        company,
+        location,
+        type,
+        vehicle,
+        pay,
+        description,
+        requirements: requirementsText
+          .split(/\n|\r\n/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      };
+
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to publish job");
+      }
+
+      toast(`${data.job?.title || title || "Job"} published`);
       router.push("/employer/dashboard");
-    }, 500);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Unable to publish job");
+    } finally {
+      setPublishing(false);
+    }
   }
 
   return (

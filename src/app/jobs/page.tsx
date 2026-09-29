@@ -9,28 +9,38 @@ import FilterPanel, {
   FilterState,
   activeFilterCount,
 } from "@/components/FilterPanel";
-import { MOCK_JOBS, type Job } from "@/data/jobs";
+import type { Job } from "@/data/jobs";
 
 const PAGE_SIZE = 4;
 const POLL_INTERVAL_MS = 5000;
 
 export default function JobListingsPage() {
-  const [jobs, setJobs] = useState<Job[]>(MOCK_JOBS);
+  const [jobs, setJobs] = useState<Job[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [sort, setSort] = useState<"newest" | "pay">("newest");
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
-    // ND-1540: board must show a new ad without a manual reload. There's no real API yet,
-    // so this just re-reads the mock source on an interval — swap this for a `GET /ads?location=`
-    // fetch once the trigger backend exists; the filter/sort/pagination below don't need to change.
-    const interval = setInterval(() => setJobs([...MOCK_JOBS]), POLL_INTERVAL_MS);
+    // ND-1540: board must show a new ad without a manual reload.
+    async function load() {
+      try {
+        const res = await fetch("/api/jobs");
+        if (!res.ok) throw new Error(String(res.status));
+        setJobs(await res.json());
+        setLoadFailed(false);
+      } catch {
+        setLoadFailed(true);
+      }
+    }
+    load();
+    const interval = setInterval(load, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
   const filtered = useMemo(() => {
-    const result = jobs.filter((job) => {
+    const result = (jobs ?? []).filter((job) => {
       if (filters.jobTypes.length && !filters.jobTypes.includes(job.type)) return false;
       if (filters.vehicles.length && !filters.vehicles.includes(job.vehicle)) return false;
       if (filters.maxDaysAgo !== null && job.postedDaysAgo > filters.maxDaysAgo) return false;
@@ -65,7 +75,7 @@ export default function JobListingsPage() {
       <div className="flex flex-1 flex-col gap-3">
         <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between gap-3 bg-[var(--color-bg)]/95 px-4 py-3 backdrop-blur-sm">
           <h1 className="text-lg font-semibold text-[var(--color-ink)]">
-            {filtered.length} job{filtered.length === 1 ? "" : "s"} found
+            {jobs === null ? "Loading jobs…" : `${filtered.length} job${filtered.length === 1 ? "" : "s"} found`}
           </h1>
           <div className="flex items-center gap-2">
             <button
@@ -91,7 +101,12 @@ export default function JobListingsPage() {
           </div>
         </div>
 
-        {pageJobs.length === 0 ? (
+        {jobs === null ? (
+          <EmptyState
+            title={loadFailed ? "Jobs are unavailable" : "Loading jobs…"}
+            message={loadFailed ? "The job feed isn't responding. Retrying every few seconds." : "Fetching the latest listings."}
+          />
+        ) : pageJobs.length === 0 ? (
           <EmptyState
             title="No jobs match your filters"
             message="Try widening your search — clear a filter or expand your radius."

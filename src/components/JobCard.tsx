@@ -79,6 +79,7 @@ export default function JobCard({ job }: { job: Job }) {
         <Tag>{job.type}</Tag>
         <Tag variant="neutral">{job.vehicle}</Tag>
         {job.isNew && <Tag variant="success">New</Tag>}
+        {(job.openings ?? 0) > 1 &&<Tag variant="neutral">{job.openings} openings</Tag>}
         {job.status !== "live" && <StatusPill status={job.status} />}
       </div>
 

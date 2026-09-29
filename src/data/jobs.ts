@@ -14,6 +14,7 @@ export type Job = {
   requirements: string[];
   status: "live" | "closed" | "expired";
   applicantCount: number;
+  openings?: number;
   // ND-1540: ad-board fields, populated only for postings that come through the email-trigger flow
   expiresAt?: string;
   renewedAt?: string;

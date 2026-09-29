@@ -1,10 +1,14 @@
 import Link from "next/link";
 import JobCard from "@/components/JobCard";
-import { MOCK_JOBS } from "@/data/jobs";
+import { listJobs } from "@/lib/jobs";
+
+export const dynamic = "force-dynamic";
 
 const CATEGORIES = ["Same-day", "Contract / 1099", "Full-time", "Owner-operator"];
 
-export default function Home() {
+export default async function Home() {
+  const jobs = await listJobs();
+
   return (
     <main className="flex flex-1 flex-col">
       <section className="bg-[var(--color-chrome)] px-4 py-14">
@@ -72,7 +76,7 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          {MOCK_JOBS.slice(0, 6).map((job) => (
+          {jobs.slice(0, 6).map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
         </div>

@@ -4,15 +4,17 @@ import JobCard from "@/components/JobCard";
 import Tag from "@/components/Tag";
 import StatusPill from "@/components/StatusPill";
 import { LocationPinIcon, ClockIcon, PhoneIcon, MessageIcon, vehicleIcon } from "@/components/icons";
-import { MOCK_JOBS } from "@/data/jobs";
+import ScreeningPanel from "@/components/ScreeningPanel";
+import { listJobs } from "@/lib/jobs";
 
 export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">) {
   const { id } = await params;
-  const job = MOCK_JOBS.find((j) => j.id === id);
+  const jobs = await listJobs();
+  const job = jobs.find((j) => j.id === id);
 
   if (!job) notFound();
 
-  const related = MOCK_JOBS.filter(
+  const related = jobs.filter(
     (j) => j.id !== job.id && (j.vehicle === job.vehicle || j.type === job.type),
   ).slice(0, 3);
 
@@ -73,8 +75,17 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
           </p>
         )}
 
+        <div className="mt-4 hidden sm:block">
+          <ScreeningPanel
+            variant="card"
+            jobId={job.id}
+            jobTitle={job.title}
+            jobSubtitle={`${job.location} · ${job.pay}`}
+          />
+        </div>
+
         {(job.voiceRoute || job.textRoute) && (
-          <div className="mt-4 hidden gap-2 sm:flex">
+          <div className="mt-3 hidden gap-2 sm:flex">
             {job.voiceRoute && (
               <a
                 href={job.voiceRoute}
@@ -95,13 +106,6 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
             )}
           </div>
         )}
-
-        <Link
-          href={`/jobs/${job.id}/apply`}
-          className="mt-4 hidden w-full rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--color-primary-dark)] active:scale-[0.97] sm:block"
-        >
-          Apply now
-        </Link>
       </div>
 
       <section>
@@ -157,12 +161,12 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
             <MessageIcon className="h-4 w-4" />
           </a>
         )}
-        <Link
-          href={`/jobs/${job.id}/apply`}
-          className="block flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--color-primary-dark)] active:scale-[0.97]"
-        >
-          Apply now
-        </Link>
+        <ScreeningPanel
+          variant="bar"
+          jobId={job.id}
+          jobTitle={job.title}
+          jobSubtitle={`${job.location} · ${job.pay}`}
+        />
       </div>
     </main>
   );

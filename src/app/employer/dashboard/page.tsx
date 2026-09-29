@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import StatusPill from "@/components/StatusPill";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/components/Toast";
-import { MOCK_JOBS } from "@/data/jobs";
+import { MOCK_JOBS, type Job } from "@/data/jobs";
 
 type SortKey = "title" | "status" | "applicantCount" | "postedDaysAgo";
 
@@ -17,10 +17,24 @@ const COLUMNS: { key: SortKey; label: string }[] = [
 ];
 
 export default function EmployerDashboardPage() {
-  const [postings, setPostings] = useState(MOCK_JOBS);
+  const [postings, setPostings] = useState<Job[]>(MOCK_JOBS);
   const [sortKey, setSortKey] = useState<SortKey>("postedDaysAgo");
   const [sortDir, setSortDir] = useState<1 | -1>(1);
   const toast = useToast();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/jobs");
+        if (!res.ok) throw new Error("Failed to load jobs");
+        setPostings(await res.json());
+      } catch {
+        setPostings(MOCK_JOBS);
+      }
+    }
+
+    load();
+  }, []);
 
   function toggleStatus(id: string, title: string) {
     setPostings((prev) =>
