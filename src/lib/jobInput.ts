@@ -103,9 +103,13 @@ export function parseNewJob(body: unknown): Result<NewJob> {
   const textRoute = route(body, "textRoute", "sms");
   if (!textRoute.ok) return textRoute;
 
+  // The platform's API tool builder has no array type, so accept newline-separated text too.
   let requirements: string[] = [];
   if (body.requirements !== undefined) {
-    const r = body.requirements;
+    const r =
+      typeof body.requirements === "string"
+        ? body.requirements.split("\n").map((line) => line.trim()).filter(Boolean)
+        : body.requirements;
     if (
       !Array.isArray(r) ||
       r.length > 20 ||

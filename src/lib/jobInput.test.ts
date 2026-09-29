@@ -48,7 +48,11 @@ describe("parseNewJob", () => {
 
   it("validates requirements", () => {
     assert.deepEqual(ok(parseNewJob({ ...valid, requirements: ["a", "b"] })).requirements, ["a", "b"]);
-    assert.equal(parseNewJob({ ...valid, requirements: "a" }).ok, false);
+    assert.deepEqual(ok(parseNewJob({ ...valid, requirements: "License\n Clean MVR \n\n" })).requirements, [
+      "License",
+      "Clean MVR",
+    ]);
+    assert.deepEqual(ok(parseNewJob({ ...valid, requirements: "" })).requirements, []);
     assert.equal(parseNewJob({ ...valid, requirements: [1] }).ok, false);
     assert.equal(parseNewJob({ ...valid, requirements: Array(21).fill("a") }).ok, false);
   });
