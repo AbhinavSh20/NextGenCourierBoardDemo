@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { PhoneIcon } from "@/components/icons";
 
 type Message = { role: "candidate" | "angie"; text: string };
 type Step = "intro" | "chat" | "done";
@@ -15,8 +16,11 @@ const DONE_HEADING: Record<Outcome | "neutral", string> = {
   neutral: "Screening complete",
 };
 
+// Text chat is hidden until Angie is connected to it; flip to true to show it again.
+const TEXT_CHAT_ENABLED = false;
+
 const EXPECTATIONS = [
-  "About 3 minutes, all by chat",
+  TEXT_CHAT_ENABLED ? "About 3 minutes, by voice or text" : "About 3 minutes, by voice",
   "Questions on your license, vehicle and availability",
   "We'll email you the result",
 ];
@@ -68,6 +72,7 @@ export default function ScreeningPanel({
   const [error, setError] = useState(false);
   const [progress, setProgress] = useState<{ step: number; total: number } | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [voice, setVoice] = useState<{ status: "idle" | "starting" | "error"; message?: string }>({ status: "idle" });
 
   const sessionId = useRef("");
   const lastAttempt = useRef<{ who: Identity; message: string; turn: number } | null>(null);
@@ -128,10 +133,45 @@ export default function ScreeningPanel({
     }
   }
 
+  function readIdentity(form: HTMLFormElement): Identity {
+    const data = new FormData(form);
+    return { name: String(data.get("name")).trim(), email: String(data.get("email")).trim() };
+  }
+
+  async function startVoice(form: HTMLFormElement) {
+    if (!form.reportValidity()) return;
+    setVoice({ status: "starting" });
+    try {
+      const res = await fetch("/api/interview/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, ...readIdentity(form) }),
+      });
+      if (res.status === 501) {
+        setVoice({
+          status: "error",
+          message: TEXT_CHAT_ENABLED
+            ? "Voice interviews aren't available yet. Chat with Angie by text instead."
+            : "Voice interviews aren't available yet. Please check back soon.",
+        });
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      if (!res.ok || typeof data?.url !== "string") throw new Error(String(res.status));
+      window.location.assign(data.url);
+    } catch {
+      setVoice({
+        status: "error",
+        message: TEXT_CHAT_ENABLED
+          ? "Couldn't start the voice interview. Try the text chat instead."
+          : "Couldn't start the voice interview. Please try again.",
+      });
+    }
+  }
+
   function start(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const who = { name: String(data.get("name")).trim(), email: String(data.get("email")).trim() };
+    const who = readIdentity(e.currentTarget);
     sessionId.current = crypto.randomUUID();
     setIdentity(who);
     setStep("chat");
@@ -160,7 +200,8 @@ export default function ScreeningPanel({
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--color-ink)]">Screen with Angie</p>
               <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-                A short chat about this role. About 3 minutes, no login needed.
+                {TEXT_CHAT_ENABLED ? "Talk to Angie or chat by text." : "Talk to Angie."} About 3 minutes, no login
+                needed.
               </p>
             </div>
           </div>
@@ -256,7 +297,17 @@ export default function ScreeningPanel({
                   ))}
                 </ul>
 
-                <form onSubmit={start} className="mt-5 flex flex-1 flex-col gap-3">
+                <form
+                  onSubmit={
+                    TEXT_CHAT_ENABLED
+                      ? start
+                      : (e) => {
+                          e.preventDefault();
+                          void startVoice(e.currentTarget);
+                        }
+                  }
+                  className="mt-5 flex flex-1 flex-col gap-3"
+                >
                   <label className="flex flex-col gap-1 text-sm font-medium text-[var(--color-ink)]">
                     Full name
                     <input
@@ -282,12 +333,34 @@ export default function ScreeningPanel({
                       Only used to send you the result.
                     </span>
                   </label>
-                  <button
-                    type="submit"
-                    className="mt-auto rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)]"
-                  >
-                    Start screening
-                  </button>
+                  {voice.status === "error" && (
+                    <p
+                      role="alert"
+                      className="rounded-lg bg-[var(--color-error-bg)] px-3 py-2 text-xs text-[var(--color-error-ink)]"
+                    >
+                      {voice.message}
+                    </p>
+                  )}
+                  <div className="mt-auto flex flex-col gap-2">
+                    <button
+                      type={TEXT_CHAT_ENABLED ? "button" : "submit"}
+                      disabled={voice.status === "starting"}
+                      onClick={TEXT_CHAT_ENABLED ? (e) => void startVoice(e.currentTarget.form!) : undefined}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                    >
+                      <PhoneIcon className="h-4 w-4" />
+                      {voice.status === "starting" ? "Connecting…" : "Talk to Angie"}
+                    </button>
+                    {TEXT_CHAT_ENABLED && (
+                      <button
+                        type="submit"
+                        disabled={voice.status === "starting"}
+                        className="rounded-lg border border-[var(--color-border)] py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        Chat by text
+                      </button>
+                    )}
+                  </div>
                 </form>
               </div>
             )}
