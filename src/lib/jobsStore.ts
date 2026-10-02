@@ -81,10 +81,33 @@ export async function insertJob(job: NewJob): Promise<{ record: JobRecord; creat
   return { record: existing.rows[0], created: false };
 }
 
+// Patch key to column. Fixed here so request data never reaches the SQL text.
+const EDIT_COLUMNS = {
+  title: "title",
+  company: "company",
+  location: "location",
+  pay: "pay",
+  payValue: "pay_value",
+  type: "type",
+  vehicle: "vehicle",
+  description: "description",
+  requirements: "requirements",
+  openings: "openings",
+  voiceRoute: "voice_route",
+  textRoute: "text_route",
+} as const;
+
 export async function updateJob(id: string, patch: JobPatch): Promise<JobRecord | null> {
   await ensureSchema();
   const params: unknown[] = [id];
   const sets: string[] = [];
+
+  for (const [key, column] of Object.entries(EDIT_COLUMNS)) {
+    const value = patch[key as keyof typeof EDIT_COLUMNS];
+    if (value === undefined) continue;
+    params.push(value);
+    sets.push(`${column} = $${params.length}`);
+  }
 
   if (patch.renew) {
     params.push(patch.expiresInDays ?? 30);
@@ -100,4 +123,10 @@ export async function updateJob(id: string, patch: JobPatch): Promise<JobRecord 
     params,
   );
   return rows[0] ?? null;
+}
+
+export async function deleteJob(id: string): Promise<boolean> {
+  await ensureSchema();
+  const { rowCount } = await pool().query("DELETE FROM jobs WHERE id = $1", [id]);
+  return (rowCount ?? 0) > 0;
 }

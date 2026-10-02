@@ -143,4 +143,50 @@ describe("parseJobPatch", () => {
   it("rejects renewing into a non-live status", () => {
     assert.equal(parseJobPatch({ renew: true, status: "expired" }).ok, false);
   });
+
+  it("accepts edits to job fields and trims them", () => {
+    assert.deepEqual(ok(parseJobPatch({ title: "  New title ", location: "Austin, TX", openings: 3 })), {
+      title: "New title",
+      location: "Austin, TX",
+      openings: 3,
+    });
+  });
+
+  it("re-derives payValue when pay changes, unless payValue is given", () => {
+    assert.deepEqual(ok(parseJobPatch({ pay: "$30/hr" })), { pay: "$30/hr", payValue: 30 });
+    assert.deepEqual(ok(parseJobPatch({ pay: "$30/hr", payValue: 33 })), { pay: "$30/hr", payValue: 33 });
+  });
+
+  it("ignores empty strings so an unfilled tool argument cannot blank a field", () => {
+    assert.deepEqual(ok(parseJobPatch({ title: "", description: "", status: "closed" })), { status: "closed" });
+    assert.equal(parseJobPatch({ title: "", description: "" }).ok, false);
+  });
+
+  it("rejects over-long or non-string text edits", () => {
+    assert.equal(parseJobPatch({ title: "x".repeat(201) }).ok, false);
+    assert.equal(parseJobPatch({ title: 5 }).ok, false);
+    assert.equal(parseJobPatch({ openings: 0 }).ok, false);
+  });
+
+  it("sets, clears and validates contact routes", () => {
+    assert.deepEqual(ok(parseJobPatch({ voiceRoute: "tel:+15550100" })), { voiceRoute: "tel:+15550100" });
+    assert.deepEqual(ok(parseJobPatch({ textRoute: null })), { textRoute: null });
+    assert.equal(parseJobPatch({ voiceRoute: "javascript:alert(1)" }).ok, false);
+    assert.equal(parseJobPatch({ textRoute: "tel:+15550100" }).ok, false);
+  });
+
+  it("accepts requirements as a list or as text", () => {
+    assert.deepEqual(ok(parseJobPatch({ requirements: ["a", "b"] })), { requirements: ["a", "b"] });
+    assert.deepEqual(ok(parseJobPatch({ requirements: "a\nb" })), { requirements: ["a", "b"] });
+    assert.equal(parseJobPatch({ requirements: [1] }).ok, false);
+  });
+
+  it("combines an edit with a renewal", () => {
+    assert.deepEqual(ok(parseJobPatch({ renew: true, pay: "$25/hr" })), { renew: true, pay: "$25/hr", payValue: 25 });
+  });
+
+  it("drops expiresInDays unless renewing, and rejects a patch with nothing left", () => {
+    assert.equal(parseJobPatch({ expiresInDays: 14 }).ok, false);
+    assert.deepEqual(ok(parseJobPatch({ status: "closed", expiresInDays: 14 })), { status: "closed" });
+  });
 });
