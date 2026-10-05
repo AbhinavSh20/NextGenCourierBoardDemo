@@ -1,6 +1,26 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildInterviewUrl, parseInterviewRequest } from "./interviewSession.ts";
+import { parseCompleteRequest, parseInterviewRequest } from "./interviewSession.ts";
+
+describe("parseCompleteRequest", () => {
+  it("accepts a Retell call id", () => {
+    const r = parseCompleteRequest({ callId: "call_a1B2-c3_d4" });
+    assert.ok(r.ok);
+    assert.equal(r.value.callId, "call_a1B2-c3_d4");
+  });
+
+  it("rejects non-objects and missing ids", () => {
+    for (const body of [null, undefined, "x", 5, [], {}, { callId: "" }, { callId: 5 }]) {
+      assert.equal(parseCompleteRequest(body).ok, false);
+    }
+  });
+
+  it("rejects ids that could alter the upstream URL", () => {
+    for (const callId of ["../x", "a/b", "a?b=1", "a b", "a#b", "x".repeat(101)]) {
+      assert.equal(parseCompleteRequest({ callId }).ok, false, callId);
+    }
+  });
+});
 
 const valid = { jobId: "abc123", name: "Maria Lopez", email: "maria@example.com" };
 
@@ -31,24 +51,5 @@ describe("parseInterviewRequest", () => {
   it("rejects over-long fields", () => {
     assert.equal(parseInterviewRequest({ ...valid, name: "x".repeat(101) }).ok, false);
     assert.equal(parseInterviewRequest({ ...valid, jobId: "x".repeat(101) }).ok, false);
-  });
-});
-
-describe("buildInterviewUrl", () => {
-  it("adds params to the base URL", () => {
-    assert.equal(
-      buildInterviewUrl("https://platform.example.com/talk-to-angie", { job: "abc", title: "Driver NYC" }),
-      "https://platform.example.com/talk-to-angie?job=abc&title=Driver+NYC",
-    );
-  });
-
-  it("keeps an existing query string", () => {
-    assert.equal(buildInterviewUrl("https://p.example.com/talk?agent=angie", { job: "abc" }), "https://p.example.com/talk?agent=angie&job=abc");
-  });
-
-  it("returns null for anything that is not an http(s) URL", () => {
-    for (const base of ["javascript:alert(1)", "data:text/html,x", "not a url", "", "ftp://p.example.com"]) {
-      assert.equal(buildInterviewUrl(base, { job: "abc" }), null, base);
-    }
   });
 });
