@@ -1,20 +1,27 @@
 import { parseInterviewRequest } from "@/lib/interviewSession";
 import { listJobs } from "@/lib/jobs";
 import { clientKey, createRateLimiter } from "@/lib/rateLimit";
-import { buildCallVariables, createWebCall } from "@/lib/retellCall";
+import { buildCallVariables, createRetellWebCall, createWebCall, type WebCallResult } from "@/lib/retellCall";
 
-// Each call costs voice minutes and this endpoint is public, so cap how often one address can start one.
+// The platform rate-limits calls too, but that limit is shared by every visitor; this one stops a loop
+// on the public page from using it all up.
 const allowCall = createRateLimiter({ max: 5, windowMs: 10 * 60_000 });
 
-// Starts a Retell browser call for the Angie voice agent. The browser gets only the short-lived
-// access token; RETELL_API_KEY never leaves the server.
+// Starts a screening call on the NextGen platform's voice agent. The browser gets only the short-lived
+// access token; the platform is only ever called from here.
 export async function POST(req: Request) {
   const parsed = parseInterviewRequest(await req.json().catch(() => null));
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
 
-  const apiKey = process.env.RETELL_API_KEY;
-  const agentId = process.env.RETELL_AGENT_ID;
-  if (!apiKey || !agentId) return Response.json({ error: "Voice interview is not configured" }, { status: 501 });
+  // The platform's public endpoint when it is configured; otherwise Retell directly (see createRetellWebCall).
+  const platformUrl = process.env.PLATFORM_API_URL;
+  const platformAgentId = process.env.VOICE_AGENT_ID;
+  const retellKey = process.env.RETELL_API_KEY;
+  const retellAgentId = process.env.RETELL_AGENT_ID;
+  const usePlatform = Boolean(platformUrl && platformAgentId);
+  if (!usePlatform && !(retellKey && retellAgentId)) {
+    return Response.json({ error: "Voice interview is not configured" }, { status: 501 });
+  }
 
   if (!allowCall(clientKey(req))) {
     return Response.json({ error: "Too many call attempts. Try again in a few minutes." }, { status: 429 });
@@ -24,12 +31,15 @@ export async function POST(req: Request) {
     const job = (await listJobs()).find((j) => j.id === parsed.value.jobId);
     if (!job) return Response.json({ error: "Job not found" }, { status: 404 });
 
-    const result = await createWebCall({
-      apiKey,
-      agentId,
-      variables: buildCallVariables(job, parsed.value),
-    });
+    const variables = buildCallVariables(job, parsed.value);
+    const result: WebCallResult = usePlatform
+      ? await createWebCall({ baseUrl: platformUrl!, agentId: platformAgentId!, variables })
+      : await createRetellWebCall({ apiKey: retellKey!, agentId: retellAgentId!, variables });
     if (!result.ok) {
+      if (result.status === 404) return Response.json({ error: "Voice interview is not available" }, { status: 501 });
+      if (result.status === 429) {
+        return Response.json({ error: "Too many call attempts. Try again in a few minutes." }, { status: 429 });
+      }
       console.error("[api/interview/session]", result.status, result.error);
       return Response.json({ error: "Could not start the call" }, { status: 502 });
     }

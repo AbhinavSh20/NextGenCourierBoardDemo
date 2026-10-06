@@ -222,8 +222,8 @@ export default function ScreeningPanel({
             <div className="min-w-0">
               <p className="text-sm font-semibold text-[var(--color-ink)]">Screen with Angie</p>
               <p className="mt-0.5 text-sm text-[var(--color-ink-soft)]">
-                {TEXT_CHAT_ENABLED ? "Talk to Angie or chat by text." : "Talk to Angie."} About 3 minutes, no login
-                needed.
+                {TEXT_CHAT_ENABLED ? "Talk to Angie or chat by text." : "A short voice interview with Angie."} About 3
+                minutes, no login needed.
               </p>
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function ScreeningPanel({
                       className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-3 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
                     >
                       <PhoneIcon className="h-4 w-4" />
-                      Talk to Angie
+                      Click here for screening interview
                     </button>
                     {TEXT_CHAT_ENABLED && (
                       <button
@@ -459,11 +459,11 @@ export default function ScreeningPanel({
                       <button
                         type="button"
                         onClick={call.end}
-                        aria-label="End call"
+                        aria-label="End interview"
                         className="flex h-14 min-w-32 items-center justify-center gap-2 rounded-full bg-[var(--color-error-ink)] px-6 text-sm font-semibold text-white hover:opacity-90"
                       >
                         <PhoneIcon className="h-4 w-4 rotate-[135deg]" />
-                        End call
+                        End interview
                       </button>
                     </>
                   ) : (

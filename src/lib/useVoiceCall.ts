@@ -16,26 +16,6 @@ type WebClient = {
   unmute(): void;
 };
 
-// Tells the site's server the call is over so it can notify the platform agent. Retell may take a
-// moment to mark the call ended, so a 409 ("not ended yet") is retried a few times. Failures are
-// silent: the candidate's result screen must never depend on this.
-async function reportCallEnded(callId: string) {
-  for (let i = 0; i < 4; i++) {
-    try {
-      const res = await fetch("/api/interview/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callId }),
-        keepalive: true,
-      });
-      if (res.status !== 409) return;
-    } catch {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-}
-
 export function useVoiceCall() {
   const [state, setState] = useState<CallState>("idle");
   const [errorKind, setErrorKind] = useState<CallErrorKind | null>(null);
@@ -48,17 +28,10 @@ export function useVoiceCall() {
   // Bumped on every start/end so a late event or response from an old call is ignored.
   const attempt = useRef(0);
   const mutedRef = useRef(false);
-  const callIdRef = useRef<string | null>(null);
-  // Set only once audio is flowing; teardown reports this call to the platform exactly once.
-  const liveCallRef = useRef<string | null>(null);
   // Retell fires stop/start talking on every pause; holding "speaking" briefly stops the UI flickering.
   const stopTalkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const teardown = useCallback(() => {
-    const finished = liveCallRef.current;
-    liveCallRef.current = null;
-    callIdRef.current = null;
-    if (finished) void reportCallEnded(finished);
     attempt.current += 1;
     if (stopTalkTimer.current) clearTimeout(stopTalkTimer.current);
     clientRef.current?.stopCall();
@@ -117,7 +90,6 @@ export function useVoiceCall() {
         const data = await res.json().catch(() => null);
         if (!res.ok || typeof data?.accessToken !== "string") return fail("failed");
         accessToken = data.accessToken;
-        callIdRef.current = typeof data.callId === "string" ? data.callId : null;
       } catch {
         if (attempt.current === mine) fail("failed");
         return;
@@ -129,11 +101,7 @@ export function useVoiceCall() {
 
         const client = new RetellWebClient() as unknown as WebClient;
         clientRef.current = client;
-        client.on("call_started", () => {
-          if (attempt.current !== mine) return;
-          liveCallRef.current = callIdRef.current;
-          setState("live");
-        });
+        client.on("call_started", () => attempt.current === mine && setState("live"));
         client.on("call_ended", () => {
           if (attempt.current !== mine) return;
           teardown();

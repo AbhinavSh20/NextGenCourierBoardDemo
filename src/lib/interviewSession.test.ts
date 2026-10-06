@@ -1,26 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseCompleteRequest, parseInterviewRequest } from "./interviewSession.ts";
-
-describe("parseCompleteRequest", () => {
-  it("accepts a Retell call id", () => {
-    const r = parseCompleteRequest({ callId: "call_a1B2-c3_d4" });
-    assert.ok(r.ok);
-    assert.equal(r.value.callId, "call_a1B2-c3_d4");
-  });
-
-  it("rejects non-objects and missing ids", () => {
-    for (const body of [null, undefined, "x", 5, [], {}, { callId: "" }, { callId: 5 }]) {
-      assert.equal(parseCompleteRequest(body).ok, false);
-    }
-  });
-
-  it("rejects ids that could alter the upstream URL", () => {
-    for (const callId of ["../x", "a/b", "a?b=1", "a b", "a#b", "x".repeat(101)]) {
-      assert.equal(parseCompleteRequest({ callId }).ok, false, callId);
-    }
-  });
-});
+import { parseInterviewRequest } from "./interviewSession.ts";
 
 const valid = { jobId: "abc123", name: "Maria Lopez", email: "maria@example.com" };
 
