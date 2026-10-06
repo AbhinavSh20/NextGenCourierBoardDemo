@@ -231,8 +231,9 @@ export default function ScreeningPanel({
             ref={triggerRef}
             type="button"
             onClick={() => setOpen(true)}
-            className="mt-3 w-full rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)]"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)]"
           >
+            <PhoneIcon className="h-4 w-4" />
             {stepLabel(step, "Start screening")}
           </button>
         </div>
@@ -241,8 +242,9 @@ export default function ScreeningPanel({
           ref={triggerRef}
           type="button"
           onClick={() => setOpen(true)}
-          className="block flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)]"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-[var(--color-primary-dark)]"
         >
+          <PhoneIcon className="h-4 w-4" />
           {stepLabel(step, "Start screening · 3 min")}
         </button>
       )}

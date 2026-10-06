@@ -67,14 +67,6 @@ export default function Navbar() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-2 md:flex">
-          {role === "guest" && (
-            <Link
-              href="/login"
-              className="rounded-full px-3 py-1.5 text-sm font-medium text-zinc-300 transition-colors duration-150 ease-out hover:text-white"
-            >
-              Sign in
-            </Link>
-          )}
           {showPostJob && (
             <Link
               href="/employer/post"
@@ -153,15 +145,7 @@ export default function Navbar() {
                   Post a job
                 </Link>
               )}
-              {role === "guest" ? (
-                <Link
-                  href="/login"
-                  tabIndex={menuOpen ? 0 : -1}
-                  className="flex h-11 items-center justify-center rounded-full border border-white/15 text-[15px] font-medium text-white"
-                >
-                  Sign in
-                </Link>
-              ) : (
+              {role !== "guest" && (
                 <button
                   type="button"
                   tabIndex={menuOpen ? 0 : -1}

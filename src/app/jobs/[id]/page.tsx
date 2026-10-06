@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import JobCard from "@/components/JobCard";
 import Tag from "@/components/Tag";
 import StatusPill from "@/components/StatusPill";
-import { LocationPinIcon, ClockIcon, PhoneIcon, MessageIcon, vehicleIcon } from "@/components/icons";
+import { LocationPinIcon, ClockIcon, vehicleIcon } from "@/components/icons";
 import ScreeningPanel from "@/components/ScreeningPanel";
 import { listJobs } from "@/lib/jobs";
 
@@ -83,29 +83,6 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
             jobSubtitle={`${job.location} · ${job.pay}`}
           />
         </div>
-
-        {(job.voiceRoute || job.textRoute) && (
-          <div className="mt-3 hidden gap-2 sm:flex">
-            {job.voiceRoute && (
-              <a
-                href={job.voiceRoute}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors duration-150 ease-out hover:border-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
-              >
-                <PhoneIcon className="h-4 w-4" />
-                Call
-              </a>
-            )}
-            {job.textRoute && (
-              <a
-                href={job.textRoute}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-semibold text-[var(--color-ink)] transition-colors duration-150 ease-out hover:border-[var(--color-primary)] hover:text-[var(--color-primary-dark)]"
-              >
-                <MessageIcon className="h-4 w-4" />
-                Text
-              </a>
-            )}
-          </div>
-        )}
       </div>
 
       <section>
@@ -143,24 +120,6 @@ export default async function JobDetailPage({ params }: PageProps<"/jobs/[id]">)
       )}
 
       <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-white/40 bg-[var(--color-surface)]/90 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:hidden">
-        {job.voiceRoute && (
-          <a
-            href={job.voiceRoute}
-            aria-label="Call about this job"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-ink)]"
-          >
-            <PhoneIcon className="h-4 w-4" />
-          </a>
-        )}
-        {job.textRoute && (
-          <a
-            href={job.textRoute}
-            aria-label="Text about this job"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-ink)]"
-          >
-            <MessageIcon className="h-4 w-4" />
-          </a>
-        )}
         <ScreeningPanel
           variant="bar"
           jobId={job.id}
