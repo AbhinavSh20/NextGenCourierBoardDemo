@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { derivePayValue, parseEmployerJob, parseJobPatch, parseNewJob } from "./jobInput.ts";
+import { derivePayValue, parseJobPatch, parseNewJob } from "./jobInput.ts";
 
 const valid = {
   title: "Driver — New York",
@@ -79,39 +79,6 @@ describe("parseNewJob", () => {
   it("prefers an explicit payValue over the derived one", () => {
     assert.equal(ok(parseNewJob({ ...valid, payValue: 30 })).payValue, 30);
     assert.equal(parseNewJob({ ...valid, payValue: -1 }).ok, false);
-  });
-});
-
-describe("parseEmployerJob", () => {
-  it("accepts the form fields", () => {
-    const job = ok(parseEmployerJob({ ...valid, type: "Full-time", vehicle: "Car", requirements: ["a"] }));
-    assert.equal(job.type, "Full-time");
-    assert.deepEqual(job.requirements, ["a"]);
-  });
-
-  it("drops agent-only fields so anonymous callers cannot set them", () => {
-    const job = ok(
-      parseEmployerJob({
-        ...valid,
-        externalRef: "squatted",
-        voiceRoute: "tel:+15550100",
-        textRoute: "sms:+15550100",
-        expiresInDays: 365,
-        openings: 50,
-        payValue: 9999,
-      }),
-    );
-    assert.equal(job.externalRef, null);
-    assert.equal(job.voiceRoute, null);
-    assert.equal(job.textRoute, null);
-    assert.equal(job.expiresInDays, 30);
-    assert.equal(job.openings, 1);
-    assert.equal(job.payValue, 24);
-  });
-
-  it("still enforces required fields", () => {
-    assert.equal(parseEmployerJob({ ...valid, title: "" }).ok, false);
-    assert.equal(parseEmployerJob(null).ok, false);
   });
 });
 

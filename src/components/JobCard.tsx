@@ -5,29 +5,10 @@ import type { Job } from "@/data/jobs";
 import Tag from "@/components/Tag";
 import StatusPill from "@/components/StatusPill";
 import { LocationPinIcon, ClockIcon, PhoneIcon, MessageIcon, vehicleIcon } from "@/components/icons";
-import { useSavedJobIds } from "@/lib/useSavedJobIds";
-import { toggleSaved } from "@/lib/savedJobsStore";
-
-function HeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth={2}
-      className="h-5 w-5"
-      aria-hidden="true"
-    >
-      <path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.3 6 3.6C14.3 5.3 15.8 4 18 4c4 0 5.5 4 4 7.7C19.5 16.4 12 21 12 21z" />
-    </svg>
-  );
-}
 
 export default function JobCard({ job }: { job: Job }) {
-  const saved = useSavedJobIds().has(job.id);
-
   return (
-    <article className="group relative grid grid-cols-[auto_1fr_auto] gap-x-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--color-primary)]/40 hover:shadow-lg sm:p-5">
+    <article className="group relative grid grid-cols-[auto_1fr] gap-x-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:border-[var(--color-primary)]/40 hover:shadow-lg sm:p-5">
       <Link
         href={`/jobs/${job.id}`}
         className="absolute inset-0 z-0 rounded-xl"
@@ -44,20 +25,6 @@ export default function JobCard({ job }: { job: Job }) {
         </h3>
         <p className="pointer-events-none truncate text-xs text-[var(--color-ink-soft)]">{job.company}</p>
       </div>
-
-      <button
-        type="button"
-        aria-label="Save job"
-        aria-pressed={saved}
-        onClick={() => toggleSaved(job.id)}
-        className={`relative z-10 col-start-3 row-span-2 -mr-1.5 -mt-1.5 flex h-9 w-9 shrink-0 items-center justify-center self-start rounded-full transition-[color,background-color,transform] duration-150 ease-out active:scale-90 ${
-          saved
-            ? "text-[var(--color-accent)]"
-            : "text-[var(--color-muted)] hover:bg-slate-50 hover:text-[var(--color-accent)]"
-        }`}
-      >
-        <HeartIcon filled={saved} />
-      </button>
 
       <div className="pointer-events-none relative col-start-2 mt-2 flex flex-col gap-1">
         <span className="text-base font-bold text-[var(--color-ink)]">{job.pay}</span>

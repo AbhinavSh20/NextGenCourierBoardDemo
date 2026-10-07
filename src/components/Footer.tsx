@@ -9,9 +9,6 @@ export default function Footer() {
           <Link href="/jobs" className="hover:text-white">
             Find jobs
           </Link>
-          <Link href="/employer/post" className="hover:text-white">
-            Post a job
-          </Link>
         </div>
       </div>
     </footer>

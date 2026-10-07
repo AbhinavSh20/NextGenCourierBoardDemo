@@ -81,23 +81,6 @@ export default async function Home() {
           ))}
         </div>
       </section>
-
-      <section className="bg-[var(--color-primary)] px-4 py-12">
-        <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
-          <h2 className="text-lg font-semibold text-white">
-            Hiring drivers for your courier business?
-          </h2>
-          <p className="text-sm text-violet-100">
-            Post a job in minutes and reach local drivers and owner-operators today.
-          </p>
-          <Link
-            href="/employer/post"
-            className="rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-zinc-800"
-          >
-            Post a job
-          </Link>
-        </div>
-      </section>
     </main>
   );
 }

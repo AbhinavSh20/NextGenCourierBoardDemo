@@ -172,13 +172,6 @@ export function parseNewJob(body: unknown): Result<NewJob> {
   };
 }
 
-// The public employer form may only set these; agent-only fields (routes, externalRef, expiry) are dropped.
-export function parseEmployerJob(body: unknown): Result<NewJob> {
-  if (!isRecord(body)) return fail("Body must be a JSON object");
-  const { title, company, location, type, vehicle, pay, description, requirements } = body;
-  return parseNewJob({ title, company, location, type, vehicle, pay, description, requirements });
-}
-
 export function parseJobPatch(body: unknown): Result<JobPatch> {
   if (!isRecord(body)) return fail("Body must be a JSON object");
 
