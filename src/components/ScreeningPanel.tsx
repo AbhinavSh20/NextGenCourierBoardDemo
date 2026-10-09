@@ -105,9 +105,8 @@ export default function ScreeningPanel({
 }) {
   const [open, setOpen] = useState(false);
   const call = useVoiceCall();
-  const [rawStep, setStep] = useState<Step>("intro");
-  // A finished call lands on the result screen without a separate state update.
-  const step: Step = rawStep === "call" && call.state === "ended" ? "done" : rawStep;
+  const callBusy = call.state === "starting" || call.state === "live";
+  const [step, setStep] = useState<Step>("intro");
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -127,7 +126,7 @@ export default function ScreeningPanel({
     if (!open) return;
     const trigger = triggerRef.current;
     // A live call is ended explicitly, never by a stray Escape or backdrop click.
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && step !== "call" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !callBusy && setOpen(false);
     const scrollLock = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
@@ -136,7 +135,7 @@ export default function ScreeningPanel({
       window.removeEventListener("keydown", onKey);
       trigger?.focus();
     };
-  }, [open, step]);
+  }, [open, callBusy]);
 
   useEffect(() => {
     if (open && step === "intro") nameRef.current?.focus();
@@ -214,7 +213,6 @@ export default function ScreeningPanel({
     void send(identity, text, turn);
   }
 
-  const callBusy = call.state === "starting" || call.state === "live";
   const callStatus =
     call.state === "starting"
       ? "Connecting to Angie…"
@@ -224,7 +222,9 @@ export default function ScreeningPanel({
           : call.agentSpeaking
             ? "Angie is speaking"
             : "Listening…"
-        : "Call stopped";
+        : call.state === "ended"
+          ? "Screening complete"
+          : "Call stopped";
   const lastAngie = [...messages].reverse().find((m) => m.role === "angie");
   const pct = progress ? Math.round((progress.step / progress.total) * 100) : 0;
 
@@ -472,6 +472,14 @@ export default function ScreeningPanel({
                         End interview
                       </button>
                     </>
+                  ) : call.state === "ended" ? (
+                    <button
+                      type="button"
+                      onClick={() => setStep("done")}
+                      className="flex-1 rounded-full bg-[var(--color-primary)] py-3 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
+                    >
+                      Finish
+                    </button>
                   ) : (
                     <>
                       <button
@@ -586,16 +594,6 @@ export default function ScreeningPanel({
                   <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-[var(--color-ink-soft)]">
                     We&apos;ll email your result to <span className="font-semibold text-[var(--color-ink)]">{identity.email}</span>
                   </p>
-                )}
-                {call.transcript.length > 0 && (
-                  <details className="mt-4 w-full text-left">
-                    <summary className="cursor-pointer text-center text-xs font-semibold text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">
-                      View screening transcript
-                    </summary>
-                    <div className="mt-3 flex flex-col gap-2">
-                      <TranscriptBubbles lines={call.transcript} />
-                    </div>
-                  </details>
                 )}
                 <div className="mt-auto flex w-full flex-col gap-2 pt-6">
                   <Link
