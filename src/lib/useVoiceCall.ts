@@ -23,8 +23,11 @@ export function useVoiceCall() {
   const [muted, setMuted] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [seconds, setSeconds] = useState(0);
+  // True while the full transcript is fetched after the call ends; the live one shows meanwhile.
+  const [loadingTranscript, setLoadingTranscript] = useState(false);
 
   const clientRef = useRef<WebClient | null>(null);
+  const callIdRef = useRef<string | null>(null);
   // Bumped on every start/end so a late event or response from an old call is ignored.
   const attempt = useRef(0);
   const mutedRef = useRef(false);
@@ -39,6 +42,33 @@ export function useVoiceCall() {
     mutedRef.current = false;
     setAgentSpeaking(false);
     setMuted(false);
+    setLoadingTranscript(false);
+  }, []);
+
+  // Retell stores the transcript a moment after hang-up, so retry briefly. Any failure keeps the live one.
+  const loadFullTranscript = useCallback(async (callId: string | null) => {
+    if (!callId) return;
+    const mine = attempt.current;
+    setLoadingTranscript(true);
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      if (attempt.current !== mine) return;
+      try {
+        const res = await fetch(`/api/interview/transcript?callId=${encodeURIComponent(callId)}`);
+        if (attempt.current !== mine) return;
+        if (!res.ok) break;
+        const data = await res.json();
+        if (attempt.current !== mine) return;
+        if (data?.ready) {
+          const lines = normalizeTranscript(data);
+          if (lines.length) setTranscript(lines);
+          break;
+        }
+      } catch {
+        break;
+      }
+    }
+    if (attempt.current === mine) setLoadingTranscript(false);
   }, []);
 
   useEffect(() => {
@@ -62,6 +92,7 @@ export function useVoiceCall() {
     async (person: CallPerson) => {
       teardown();
       const mine = attempt.current;
+      callIdRef.current = null;
       setErrorKind(null);
       setTranscript([]);
       setSeconds(0);
@@ -90,6 +121,7 @@ export function useVoiceCall() {
         const data = await res.json().catch(() => null);
         if (!res.ok || typeof data?.accessToken !== "string") return fail("failed");
         accessToken = data.accessToken;
+        callIdRef.current = typeof data.callId === "string" ? data.callId : null;
       } catch {
         if (attempt.current === mine) fail("failed");
         return;
@@ -106,6 +138,7 @@ export function useVoiceCall() {
           if (attempt.current !== mine) return;
           teardown();
           setState("ended");
+          void loadFullTranscript(callIdRef.current);
         });
         client.on("agent_start_talking", () => {
           if (attempt.current !== mine) return;
@@ -128,14 +161,15 @@ export function useVoiceCall() {
         if (attempt.current === mine) fail("failed");
       }
     },
-    [fail, teardown],
+    [fail, teardown, loadFullTranscript],
   );
 
   const end = useCallback(() => {
     const wasActive = clientRef.current !== null;
     teardown();
     setState(wasActive ? "ended" : "idle");
-  }, [teardown]);
+    if (wasActive) void loadFullTranscript(callIdRef.current);
+  }, [teardown, loadFullTranscript]);
 
   const toggleMute = useCallback(() => {
     const client = clientRef.current;
@@ -155,5 +189,5 @@ export function useVoiceCall() {
     setState("idle");
   }, [teardown]);
 
-  return { state, errorKind, agentSpeaking, muted, transcript, seconds, start, end, toggleMute, reset };
+  return { state, errorKind, agentSpeaking, muted, transcript, loadingTranscript, seconds, start, end, toggleMute, reset };
 }

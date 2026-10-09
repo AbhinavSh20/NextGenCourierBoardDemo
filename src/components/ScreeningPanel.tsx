@@ -73,19 +73,39 @@ function CheckIcon({ className }: { className: string }) {
   );
 }
 
-function TranscriptBubbles({ lines }: { lines: TranscriptLine[] }) {
-  return lines.map((line, i) => (
-    <p
-      key={i}
-      className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-snug ${
-        line.role === "agent"
-          ? "self-start rounded-bl-md bg-slate-100 text-[var(--color-ink)]"
-          : "self-end rounded-br-md bg-[var(--color-primary)] text-white"
-      }`}
-    >
-      {line.content}
-    </p>
-  ));
+// Consecutive lines from one speaker read as one turn: one name and avatar, stacked bubbles.
+function Transcript({ lines }: { lines: TranscriptLine[] }) {
+  const turns: { role: TranscriptLine["role"]; start: number; texts: string[] }[] = [];
+  lines.forEach((line, i) => {
+    const last = turns[turns.length - 1];
+    if (last?.role === line.role) last.texts.push(line.content);
+    else turns.push({ role: line.role, start: i, texts: [line.content] });
+  });
+
+  return turns.map((turn) =>
+    turn.role === "agent" ? (
+      <div key={turn.start} className="fade-in-up flex max-w-[88%] items-start gap-2 self-start">
+        <AngieAvatar />
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-[11px] font-semibold text-[var(--color-ink-soft)]">Angie</span>
+          {turn.texts.map((text, j) => (
+            <p key={j} className="w-fit rounded-2xl rounded-tl-md bg-slate-100 px-3.5 py-2 text-sm leading-relaxed text-[var(--color-ink)]">
+              {text}
+            </p>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <div key={turn.start} className="fade-in-up flex max-w-[80%] flex-col items-end gap-1 self-end">
+        <span className="text-[11px] font-semibold text-[var(--color-ink-soft)]">You</span>
+        {turn.texts.map((text, j) => (
+          <p key={j} className="w-fit rounded-2xl rounded-tr-md bg-[var(--color-primary)] px-3.5 py-2 text-sm leading-relaxed text-white">
+            {text}
+          </p>
+        ))}
+      </div>
+    ),
+  );
 }
 
 function stepLabel(step: Step, idle: string) {
@@ -396,8 +416,14 @@ export default function ScreeningPanel({
 
             {step === "call" && (
               <div className="flex flex-1 flex-col overflow-hidden">
-                <div className="flex flex-col items-center bg-gradient-to-b from-violet-50 to-transparent px-5 pb-4 pt-8">
-                  <div className="relative flex h-24 w-24 items-center justify-center">
+                <div
+                  className={`flex flex-col items-center bg-gradient-to-b from-violet-50 to-transparent px-5 transition-[padding] ${
+                    call.state === "ended" ? "pb-3 pt-5" : "pb-4 pt-8"
+                  }`}
+                >
+                  <div
+                    className={`relative flex items-center justify-center ${call.state === "ended" ? "h-16 w-16" : "h-24 w-24"}`}
+                  >
                     <span
                       aria-hidden="true"
                       data-active={call.state === "live" && call.agentSpeaking && !call.muted}
@@ -405,9 +431,9 @@ export default function ScreeningPanel({
                     />
                     <span
                       aria-hidden="true"
-                      className={`relative flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-primary)] text-3xl font-semibold text-white shadow-md transition-opacity ${
-                        call.state === "starting" ? "animate-pulse" : ""
-                      }`}
+                      className={`relative flex items-center justify-center rounded-full bg-[var(--color-primary)] font-semibold text-white shadow-md transition-opacity ${
+                        call.state === "ended" ? "h-14 w-14 text-2xl" : "h-20 w-20 text-3xl"
+                      } ${call.state === "starting" ? "animate-pulse" : ""}`}
                     >
                       A
                     </span>
@@ -416,7 +442,9 @@ export default function ScreeningPanel({
                     {callStatus}
                   </p>
                   <div className="mt-1 flex h-5 items-center gap-3 text-xs tabular-nums text-[var(--color-ink-soft)]">
-                    <span className={call.state === "live" ? "" : "invisible"}>{formatDuration(call.seconds)}</span>
+                    <span className={call.state === "live" || call.state === "ended" ? "" : "invisible"}>
+                      {formatDuration(call.seconds)}
+                    </span>
                     <span
                       aria-hidden="true"
                       data-active={call.state === "live" && call.agentSpeaking && !call.muted}
@@ -427,13 +455,24 @@ export default function ScreeningPanel({
                   </div>
                 </div>
 
-                <div ref={listRef} className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 pb-2" aria-live="polite">
+                {(call.transcript.length > 0 || call.loadingTranscript) && (
+                  <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                    <span>Transcript</span>
+                    {call.loadingTranscript && <span className="normal-case tracking-normal animate-pulse">Getting full transcript…</span>}
+                  </div>
+                )}
+                <div
+                  ref={listRef}
+                  className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3"
+                  // Off once ended, so swapping in the full transcript is not read out again.
+                  aria-live={call.state === "live" ? "polite" : "off"}
+                >
                   {call.transcript.length === 0 && call.state === "live" && (
                     <p className="m-auto text-center text-xs text-[var(--color-muted)]">
                       Your conversation will appear here.
                     </p>
                   )}
-                  <TranscriptBubbles lines={call.transcript} />
+                  <Transcript lines={call.transcript} />
                 </div>
 
                 {call.state === "error" && call.errorKind && (
