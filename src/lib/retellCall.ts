@@ -1,5 +1,3 @@
-import { normalizeTranscript, type TranscriptLine } from "./callFormat.ts";
-
 export type CallJob = { id: string; title: string; location: string; pay: string };
 export type CallCandidate = { name: string; email: string };
 
@@ -91,34 +89,4 @@ export async function createRetellWebCall(
     return { ok: false, status: 502, error: "Voice service returned an unexpected answer" };
   }
   return { ok: true, callId: data.call_id, accessToken: data.access_token };
-}
-
-export type CallTranscriptResult =
-  | { ok: true; ready: boolean; transcript: TranscriptLine[] }
-  | { ok: false; status: number; error: string };
-
-// The live `update` event may carry only the latest lines; Retell's stored call has the whole
-// transcript. Calls on other agents in the same Retell account are reported as not found.
-export async function getCallTranscript(
-  input: { apiKey: string; callId: string; agentIds: string[] },
-  fetchFn: typeof fetch = fetch,
-): Promise<CallTranscriptResult> {
-  let res: Response;
-  try {
-    res = await fetchFn(`https://api.retellai.com/v2/get-call/${encodeURIComponent(input.callId)}`, {
-      headers: { Authorization: `Bearer ${input.apiKey}` },
-    });
-  } catch {
-    return { ok: false, status: 502, error: "Could not reach the voice service" };
-  }
-
-  const notFound = { ok: false, status: 404, error: "Call not found" } as const;
-  if (res.status === 404) return notFound;
-  const data = await res.json().catch(() => null);
-  if (!res.ok || !data) return { ok: false, status: 502, error: `Voice service rejected the request (${res.status})` };
-  if (!input.agentIds.includes(data.agent_id)) return notFound;
-
-  const transcript = normalizeTranscript({ transcript: data.transcript_object });
-  if (data.call_status !== "ended" || transcript.length === 0) return { ok: true, ready: false, transcript: [] };
-  return { ok: true, ready: true, transcript };
 }

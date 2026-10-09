@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildCallVariables, createRetellWebCall, createWebCall, getCallTranscript } from "./retellCall.ts";
+import { buildCallVariables, createRetellWebCall, createWebCall } from "./retellCall.ts";
 
 const job = { id: "j1", title: "Driver — New York", company: "NextGen Technologies", location: "New York, NY", pay: "$24/hr" };
 const candidate = { name: "Maria Lopez", email: "maria@example.com" };
@@ -137,63 +137,5 @@ describe("createRetellWebCall", () => {
     }) as unknown as typeof fetch;
     const out = await createRetellWebCall(input, boom);
     assert.ok(!out.ok && out.status === 502);
-  });
-});
-
-describe("getCallTranscript", () => {
-  const input = { apiKey: "key_123", callId: "call_1", agentIds: ["agent_abc"] };
-  const ended = {
-    call_id: "call_1",
-    agent_id: "agent_abc",
-    call_status: "ended",
-    transcript_object: [
-      { role: "agent", content: "Hi Maria", words: [] },
-      { role: "user", content: " Hello ", words: [] },
-      { role: "transition", content: "node" },
-    ],
-  };
-
-  it("fetches the call from Retell and returns its whole transcript once it has ended", async () => {
-    const { fetchFn, calls } = fakeFetch(200, ended);
-    const out = await getCallTranscript(input, fetchFn);
-    assert.deepEqual(out, {
-      ok: true,
-      ready: true,
-      transcript: [
-        { role: "agent", content: "Hi Maria" },
-        { role: "user", content: "Hello" },
-      ],
-    });
-    assert.equal(calls[0].url, "https://api.retellai.com/v2/get-call/call_1");
-    assert.equal((calls[0].init.headers as Record<string, string>).Authorization, "Bearer key_123");
-  });
-
-  it("says not ready while the call is still going or the transcript is empty", async () => {
-    const live = await getCallTranscript(input, fakeFetch(200, { ...ended, call_status: "ongoing" }).fetchFn);
-    assert.deepEqual(live, { ok: true, ready: false, transcript: [] });
-    const empty = await getCallTranscript(input, fakeFetch(200, { ...ended, transcript_object: [] }).fetchFn);
-    assert.deepEqual(empty, { ok: true, ready: false, transcript: [] });
-  });
-
-  it("hides calls that belong to another agent", async () => {
-    const out = await getCallTranscript(input, fakeFetch(200, { ...ended, agent_id: "someone_else" }).fetchFn);
-    assert.deepEqual(out, { ok: false, status: 404, error: "Call not found" });
-  });
-
-  it("maps a missing call to 404 and other failures to 502", async () => {
-    assert.deepEqual(await getCallTranscript(input, fakeFetch(404, {}).fetchFn), { ok: false, status: 404, error: "Call not found" });
-    const bad = await getCallTranscript(input, fakeFetch(401, { error: "bad key_123" }).fetchFn);
-    assert.ok(!bad.ok && bad.status === 502 && !bad.error.includes("key_123"));
-    const boom = (async () => {
-      throw new Error("ECONNRESET");
-    }) as unknown as typeof fetch;
-    const net = await getCallTranscript(input, boom);
-    assert.ok(!net.ok && net.status === 502);
-  });
-
-  it("escapes the call id in the URL", async () => {
-    const { fetchFn, calls } = fakeFetch(200, ended);
-    await getCallTranscript({ ...input, callId: "../x" }, fetchFn);
-    assert.equal(calls[0].url, "https://api.retellai.com/v2/get-call/..%2Fx");
   });
 });

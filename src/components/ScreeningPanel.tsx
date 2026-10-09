@@ -455,16 +455,14 @@ export default function ScreeningPanel({
                   </div>
                 </div>
 
-                {(call.transcript.length > 0 || call.loadingTranscript) && (
-                  <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                    <span>Transcript</span>
-                    {call.loadingTranscript && <span className="normal-case tracking-normal animate-pulse">Getting full transcript…</span>}
+                {call.transcript.length > 0 && (
+                  <div className="border-b border-[var(--color-border)] px-4 pb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                    Transcript
                   </div>
                 )}
                 <div
                   ref={listRef}
                   className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3"
-                  // Off once ended, so swapping in the full transcript is not read out again.
                   aria-live={call.state === "live" ? "polite" : "off"}
                 >
                   {call.transcript.length === 0 && call.state === "live" && (
