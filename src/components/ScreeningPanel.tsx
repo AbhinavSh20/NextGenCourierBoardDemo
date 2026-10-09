@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { PhoneIcon } from "@/components/icons";
-import { formatDuration } from "@/lib/callFormat";
+import { formatDuration, type TranscriptLine } from "@/lib/callFormat";
 import { useVoiceCall, type CallErrorKind } from "@/lib/useVoiceCall";
 
 type Message = { role: "candidate" | "angie"; text: string };
@@ -71,6 +71,21 @@ function CheckIcon({ className }: { className: string }) {
       <path d="m5 12.5 4.5 4.5L19 7.5" />
     </svg>
   );
+}
+
+function TranscriptBubbles({ lines }: { lines: TranscriptLine[] }) {
+  return lines.map((line, i) => (
+    <p
+      key={i}
+      className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-snug ${
+        line.role === "agent"
+          ? "self-start rounded-bl-md bg-slate-100 text-[var(--color-ink)]"
+          : "self-end rounded-br-md bg-[var(--color-primary)] text-white"
+      }`}
+    >
+      {line.content}
+    </p>
+  ));
 }
 
 function stepLabel(step: Step, idle: string) {
@@ -418,18 +433,7 @@ export default function ScreeningPanel({
                       Your conversation will appear here.
                     </p>
                   )}
-                  {call.transcript.map((line, i) => (
-                    <p
-                      key={i}
-                      className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-snug ${
-                        line.role === "agent"
-                          ? "self-start rounded-bl-md bg-slate-100 text-[var(--color-ink)]"
-                          : "self-end rounded-br-md bg-[var(--color-primary)] text-white"
-                      }`}
-                    >
-                      {line.content}
-                    </p>
-                  ))}
+                  <TranscriptBubbles lines={call.transcript} />
                 </div>
 
                 {call.state === "error" && call.errorKind && (
@@ -582,6 +586,16 @@ export default function ScreeningPanel({
                   <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs text-[var(--color-ink-soft)]">
                     We&apos;ll email your result to <span className="font-semibold text-[var(--color-ink)]">{identity.email}</span>
                   </p>
+                )}
+                {call.transcript.length > 0 && (
+                  <details className="mt-4 w-full text-left">
+                    <summary className="cursor-pointer text-center text-xs font-semibold text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]">
+                      View screening transcript
+                    </summary>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <TranscriptBubbles lines={call.transcript} />
+                    </div>
+                  </details>
                 )}
                 <div className="mt-auto flex w-full flex-col gap-2 pt-6">
                   <Link
