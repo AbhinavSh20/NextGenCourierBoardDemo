@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { normalizeTranscript, type TranscriptLine } from "@/lib/callFormat";
+import type { WebCallConnection } from "@/lib/retellCall";
 
 export type CallState = "idle" | "starting" | "live" | "ended" | "error";
 export type CallErrorKind = "unavailable" | "mic-blocked" | "rate-limited" | "failed";
@@ -10,7 +11,7 @@ export type CallPerson = { jobId: string; name: string; email: string };
 // Minimal view of Retell's web client; it is imported lazily so the SDK never loads on the server.
 type WebClient = {
   on(event: string, handler: (payload?: unknown) => void): unknown;
-  startCall(config: { accessToken: string }): Promise<void>;
+  startCall(config: WebCallConnection): Promise<void>;
   stopCall(): void;
   mute(): void;
   unmute(): void;
@@ -77,7 +78,7 @@ export function useVoiceCall() {
       }
       if (attempt.current !== mine) return;
 
-      let accessToken: string;
+      let connection: WebCallConnection;
       try {
         const res = await fetch("/api/interview/session", {
           method: "POST",
@@ -89,7 +90,12 @@ export function useVoiceCall() {
         if (res.status === 429) return fail("rate-limited");
         const data = await res.json().catch(() => null);
         if (!res.ok || typeof data?.accessToken !== "string") return fail("failed");
-        accessToken = data.accessToken;
+        connection = {
+          accessToken: data.accessToken,
+          callId: data.callId,
+          transport: data.transport,
+          iceServers: data.iceServers,
+        };
       } catch {
         if (attempt.current === mine) fail("failed");
         return;
@@ -123,7 +129,7 @@ export function useVoiceCall() {
         });
         client.on("error", () => attempt.current === mine && fail("failed"));
 
-        await client.startCall({ accessToken });
+        await client.startCall(connection);
       } catch {
         if (attempt.current === mine) fail("failed");
       }

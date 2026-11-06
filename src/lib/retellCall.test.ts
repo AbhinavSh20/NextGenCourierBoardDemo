@@ -59,6 +59,17 @@ describe("createWebCall", () => {
     assert.equal(sent.dynamicVariables.candidate_email, "maria@example.com");
   });
 
+  it("passes on the transport and ICE servers the browser SDK needs", async () => {
+    const iceServers = [{ urls: "stun:stun.example.com:3478" }];
+    const fetchFn = (async () =>
+      new Response(
+        JSON.stringify({ call_id: "call_1", access_token: "tok_1", transport: "gateway", ice_servers: iceServers }),
+        { status: 200 },
+      )) as typeof fetch;
+    const out = await createWebCall({ baseUrl: "https://api.example.com", agentId: "a1", variables: {} }, fetchFn);
+    assert.deepEqual(out, { ok: true, callId: "call_1", accessToken: "tok_1", transport: "gateway", iceServers });
+  });
+
   it("handles a trailing slash and encodes the agent id", async () => {
     const { fetchFn, calls } = fakeFetch(200, { access_token: "t", call_id: "c" });
     await createWebCall({ ...input, baseUrl: "https://backend.example.com/", agentId: "a/b?c" }, fetchFn);
@@ -107,7 +118,7 @@ describe("createRetellWebCall", () => {
     assert.deepEqual(out, { ok: true, callId: "call_1", accessToken: "tok_1" });
 
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].url, "https://api.retellai.com/v2/create-web-call");
+    assert.equal(calls[0].url, "https://api.retellai.com/v3/create-web-call");
     const headers = calls[0].init.headers as Record<string, string>;
     assert.equal(headers.Authorization, "Bearer key_123");
     const sent = JSON.parse(String(calls[0].init.body));

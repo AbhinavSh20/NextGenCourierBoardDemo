@@ -1,9 +1,29 @@
 export type CallJob = { id: string; title: string; location: string; pay: string };
 export type CallCandidate = { name: string; email: string };
 
+export type IceServer = { urls: string | string[]; username?: string; credential?: string };
+
+// Everything the browser SDK needs to join the call. Retell's v3 API can issue LiveKit or gateway
+// tokens, and the two look alike, so transport must be passed on rather than left to the SDK's default.
+export type WebCallConnection = {
+  callId: string;
+  accessToken: string;
+  transport?: "livekit" | "gateway";
+  iceServers?: IceServer[];
+};
+
 export type WebCallResult =
-  | { ok: true; callId: string; accessToken: string }
+  | ({ ok: true } & WebCallConnection)
   | { ok: false; status: number; error: string };
+
+function readConnection(data: { call_id: string; access_token: string; transport?: unknown; ice_servers?: unknown }): WebCallConnection {
+  return {
+    callId: data.call_id,
+    accessToken: data.access_token,
+    ...(data.transport === "livekit" || data.transport === "gateway" ? { transport: data.transport } : {}),
+    ...(Array.isArray(data.ice_servers) ? { iceServers: data.ice_servers as IceServer[] } : {}),
+  };
+}
 
 // The voice agent's prompt references these as {{job_title}} etc. Values must be strings.
 // Jobs have no schedule field yet, so the agent is told it is flexible.
@@ -51,7 +71,7 @@ export async function createWebCall(
   if (typeof data?.call_id !== "string" || typeof data?.access_token !== "string") {
     return { ok: false, status: 502, error: "Voice service returned an unexpected answer" };
   }
-  return { ok: true, callId: data.call_id, accessToken: data.access_token };
+  return { ok: true, ...readConnection(data) };
 }
 
 // Fallback while the platform's public web-call endpoint is not deployed: create the call on Retell
@@ -62,7 +82,7 @@ export async function createRetellWebCall(
 ): Promise<WebCallResult> {
   let res: Response;
   try {
-    res = await fetchFn("https://api.retellai.com/v2/create-web-call", {
+    res = await fetchFn("https://api.retellai.com/v3/create-web-call", {
       method: "POST",
       headers: { Authorization: `Bearer ${input.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -88,5 +108,5 @@ export async function createRetellWebCall(
   if (typeof data?.call_id !== "string" || typeof data?.access_token !== "string") {
     return { ok: false, status: 502, error: "Voice service returned an unexpected answer" };
   }
-  return { ok: true, callId: data.call_id, accessToken: data.access_token };
+  return { ok: true, ...readConnection(data) };
 }

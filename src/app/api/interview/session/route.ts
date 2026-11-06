@@ -8,7 +8,7 @@ import { buildCallVariables, createRetellWebCall, createWebCall, type WebCallRes
 const allowCall = createRateLimiter({ max: 5, windowMs: 10 * 60_000 });
 
 // Starts a screening call on the NextGen platform's voice agent. The browser gets only the short-lived
-// access token; the platform is only ever called from here.
+// connection details; the platform is only ever called from here.
 export async function POST(req: Request) {
   const parsed = parseInterviewRequest(await req.json().catch(() => null));
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: 400 });
@@ -43,7 +43,12 @@ export async function POST(req: Request) {
       console.error("[api/interview/session]", result.status, result.error);
       return Response.json({ error: "Could not start the call" }, { status: 502 });
     }
-    return Response.json({ accessToken: result.accessToken, callId: result.callId });
+    return Response.json({
+      accessToken: result.accessToken,
+      callId: result.callId,
+      transport: result.transport,
+      iceServers: result.iceServers,
+    });
   } catch (err) {
     console.error("[api/interview/session]", err);
     return Response.json({ error: "Failed to start voice interview" }, { status: 500 });
