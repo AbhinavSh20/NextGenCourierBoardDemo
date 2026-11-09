@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { normalizeTranscript, type TranscriptLine } from "@/lib/callFormat";
 import type { WebCallConnection } from "@/lib/retellCall";
+import type { MonitorSession } from "retell-client-js-sdk";
+
+// Gateway calls (Retell API v3) send no transcript or talking events to the call itself; the live
+// transcript comes from a separate monitor stream, opened with a Retell public key limited to this site.
+const RETELL_PUBLIC_KEY = process.env.NEXT_PUBLIC_RETELL_PUBLIC_KEY;
 
 export type CallState = "idle" | "starting" | "live" | "ended" | "error";
 export type CallErrorKind = "unavailable" | "mic-blocked" | "rate-limited" | "failed";
@@ -26,15 +31,22 @@ export function useVoiceCall() {
   const [seconds, setSeconds] = useState(0);
 
   const clientRef = useRef<WebClient | null>(null);
+  const monitorRef = useRef<MonitorSession | null>(null);
   // Bumped on every start/end so a late event or response from an old call is ignored.
   const attempt = useRef(0);
   const mutedRef = useRef(false);
   // Retell fires stop/start talking on every pause; holding "speaking" briefly stops the UI flickering.
   const stopTalkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Gateway calls have no talking events: the agent counts as speaking while its last line keeps growing.
+  const lastAgentLine = useRef("");
 
   const teardown = useCallback(() => {
     attempt.current += 1;
     if (stopTalkTimer.current) clearTimeout(stopTalkTimer.current);
+    // Leaving the monitor stream does not end the call; stopCall below does.
+    monitorRef.current?.disconnect();
+    monitorRef.current = null;
+    lastAgentLine.current = "";
     clientRef.current?.stopCall();
     clientRef.current = null;
     mutedRef.current = false;
@@ -102,12 +114,35 @@ export function useVoiceCall() {
       }
 
       try {
-        const { RetellWebClient } = await import("retell-client-js-sdk");
+        const { RetellClient, RetellWebClient } = await import("retell-client-js-sdk");
         if (attempt.current !== mine) return;
 
         const client = new RetellWebClient() as unknown as WebClient;
         clientRef.current = client;
-        client.on("call_started", () => attempt.current === mine && setState("live"));
+        client.on("call_started", () => {
+          if (attempt.current !== mine) return;
+          setState("live");
+          if (!RETELL_PUBLIC_KEY || !connection.callId || connection.transport === "livekit") return;
+          // Transcript only: the monitor never joins the audio, and if it fails the call carries on.
+          monitorRef.current = new RetellClient({ key: RETELL_PUBLIC_KEY }).monitorCall({
+            call_id: connection.callId,
+            hooks: {
+              onTranscript: (utterances) => {
+                if (attempt.current !== mine) return;
+                const lines = normalizeTranscript({ transcript: utterances });
+                if (!lines.length) return;
+                setTranscript(lines);
+                const last = lines[lines.length - 1];
+                if (last.role !== "agent" || last.content === lastAgentLine.current) return;
+                lastAgentLine.current = last.content;
+                if (stopTalkTimer.current) clearTimeout(stopTalkTimer.current);
+                setAgentSpeaking(true);
+                stopTalkTimer.current = setTimeout(() => setAgentSpeaking(false), 1200);
+              },
+              onError: (err) => console.warn("[voice] live transcript unavailable:", err.message),
+            },
+          });
+        });
         client.on("call_ended", () => {
           if (attempt.current !== mine) return;
           teardown();
